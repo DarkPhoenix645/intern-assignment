@@ -227,9 +227,13 @@ const searchNote = async (req: RequestWithUser, res: Response, next: NextFunctio
     }
     const searchQuery = (req.query.q as string) || '';
     const tags = req.query.tags ? (req.query.tags as string).split(',') : [];
+
     if (!searchQuery || searchQuery.length < 2) {
-      return res.json([]);
+      const result = await Note.find({ _id: req.userObj.id });
+      successHandler(new SuccessResponse('Successfully fetched matching notes', '200'), res, { result });
+      return;
     }
+
     const pipeline: any[] = [];
     // Compound search if tags are present
     if (tags.length > 0 && tags[0] !== '') {
@@ -284,7 +288,8 @@ const searchNote = async (req: RequestWithUser, res: Response, next: NextFunctio
     pipeline.push({ $sort: { score: -1, updatedAt: -1 } });
     pipeline.push({ $limit: 10 });
     const result = await Note.aggregate(pipeline);
-    return res.json(result);
+    successHandler(new SuccessResponse('Successfully fetched matching notes', '200'), res, { result });
+    return;
   } catch (err) {
     logger.error.SERVER_ERR(`Failed to search notes: ${err}`);
     next(new ServerError('Failed to search notes.'));
