@@ -40,7 +40,7 @@ app.use(userRouter);
 app.use(errorHandler);
 
 // Atlas Search Environment Setup
-const ATLAS_API_BASE_URL = 'https://cloud.mongodb.com/api/atlas/v2';
+const ATLAS_API_BASE_URL = 'https://cloud.mongodb.com/api/atlas/v1.0';
 const ATLAS_PROJECT_ID = process.env.MONGODB_ATLAS_PROJECT_ID;
 const ATLAS_CLUSTER_NAME = process.env.MONGODB_ATLAS_CLUSTER;
 const ATLAS_CLUSTER_API_URL = `${ATLAS_API_BASE_URL}/groups/${ATLAS_PROJECT_ID}/clusters/${ATLAS_CLUSTER_NAME}`;
@@ -52,45 +52,71 @@ const ATLAS_API_PUBLIC_KEY = process.env.MONGODB_ATLAS_PUBLIC_KEY;
 const ATLAS_API_PRIVATE_KEY = process.env.MONGODB_ATLAS_PRIVATE_KEY;
 const DIGEST_AUTH = `${ATLAS_API_PUBLIC_KEY}:${ATLAS_API_PRIVATE_KEY}`;
 
-const MONGO_URI = process.env.MONGO_URI;
-if (!MONGO_URI) {
-  throw new Error('MONGO_URI environment variable is required');
+const NOTE_DB = 'test';
+const NOTE_COLLECTION = 'note';
+const MONGODB_HOST = process.env.MONGODB_HOST as string;
+
+if (!MONGODB_HOST) {
+  throw new Error('MONGODB_HOST environment variable is required');
 }
-const NOTE_COLLECTION = 'notes';
-const NOTE_DB = process.env.MONGODB_DATABASE || (MONGO_URI ? new URL(MONGO_URI).pathname.replace(/^\//, '') : 'test');
+if (!NOTE_DB) {
+  console.log(MONGODB_HOST);
+  console.log(NOTE_DB);
+  throw new Error('MONGODB_DATABASE environment variable is required, or MONGODB_HOST must include a database name.');
+}
 
 async function findAtlasIndexByName(indexName: string) {
-  const res = await request(`${ATLAS_SEARCH_INDEX_API_URL}/${NOTE_DB}/${NOTE_COLLECTION}`, {
-    dataType: 'json',
-    contentType: 'application/json',
-    method: 'GET',
-    digestAuth: DIGEST_AUTH,
-  });
-  return (res.data as any[]).find((i) => i.name === indexName);
+  try {
+    const res = await request(`${ATLAS_SEARCH_INDEX_API_URL}/${NOTE_DB}/${NOTE_COLLECTION}`, {
+      dataType: 'json',
+      contentType: 'application/json',
+      method: 'GET',
+      digestAuth: DIGEST_AUTH,
+    });
+
+    if (res.statusCode === 200) {
+      return (res.data as any[]).find((i) => i.name === indexName);
+    } else {
+      logger.error.SERVER_MSG(`Failed to fetch Atlas Search indexes: ${JSON.stringify(res.data)}`);
+      return undefined;
+    }
+  } catch (error) {
+    logger.error.SERVER_MSG(`Error finding Atlas index: ${error}`);
+    return undefined;
+  }
 }
 
 async function upsertAtlasSearchIndex() {
   const searchIndex = await findAtlasIndexByName(USER_SEARCH_INDEX_NAME);
   if (!searchIndex) {
-    await request(ATLAS_SEARCH_INDEX_API_URL, {
-      data: {
-        name: USER_SEARCH_INDEX_NAME,
-        database: NOTE_DB,
-        collectionName: NOTE_COLLECTION,
-        mappings: {
-          dynamic: false,
-          fields: {
-            title: [{ type: 'string' }],
-            content: [{ type: 'string' }],
+    try {
+      const res = await request(ATLAS_SEARCH_INDEX_API_URL, {
+        data: {
+          name: USER_SEARCH_INDEX_NAME,
+          database: NOTE_DB,
+          collectionName: NOTE_COLLECTION,
+          mappings: {
+            dynamic: false,
+            fields: {
+              title: [{ type: 'string' }],
+              content: [{ type: 'string' }],
+            },
           },
         },
-      },
-      dataType: 'json',
-      contentType: 'application/json',
-      method: 'POST',
-      digestAuth: DIGEST_AUTH,
-    });
-    logger.info.SERVER_MSG('Created Atlas note_search index');
+        dataType: 'json',
+        contentType: 'application/json',
+        method: 'POST',
+        digestAuth: DIGEST_AUTH,
+      });
+
+      if (res.statusCode === 200) {
+        logger.info.SERVER_MSG('Created Atlas note_search index');
+      } else {
+        logger.error.SERVER_MSG(`Failed to create Atlas Search index: ${JSON.stringify(res.data)}`);
+      }
+    } catch (error) {
+      logger.error.SERVER_MSG(`Error creating Atlas Search index: ${error}`);
+    }
   } else {
     logger.info.SERVER_MSG('Atlas note_search index already exists');
   }
@@ -99,38 +125,47 @@ async function upsertAtlasSearchIndex() {
 async function upsertAtlasAutocompleteIndex() {
   const autocompleteIndex = await findAtlasIndexByName(USER_AUTOCOMPLETE_INDEX_NAME);
   if (!autocompleteIndex) {
-    await request(ATLAS_SEARCH_INDEX_API_URL, {
-      data: {
-        name: USER_AUTOCOMPLETE_INDEX_NAME,
-        database: NOTE_DB,
-        collectionName: NOTE_COLLECTION,
-        mappings: {
-          dynamic: false,
-          fields: {
-            title: [
-              {
-                type: 'autocomplete',
-                tokenization: 'edgeGram',
-                minGrams: 2,
-                maxGrams: 7,
-              },
-            ],
+    try {
+      const res = await request(ATLAS_SEARCH_INDEX_API_URL, {
+        data: {
+          name: USER_AUTOCOMPLETE_INDEX_NAME,
+          database: NOTE_DB,
+          collectionName: NOTE_COLLECTION,
+          mappings: {
+            dynamic: false,
+            fields: {
+              title: [
+                {
+                  type: 'autocomplete',
+                  tokenization: 'edgeGram',
+                  minGrams: 2,
+                  maxGrams: 7,
+                },
+              ],
+            },
           },
         },
-      },
-      dataType: 'json',
-      contentType: 'application/json',
-      method: 'POST',
-      digestAuth: DIGEST_AUTH,
-    });
-    logger.info.SERVER_MSG('Created Atlas note_autocomplete index');
+        dataType: 'json',
+        contentType: 'application/json',
+        method: 'POST',
+        digestAuth: DIGEST_AUTH,
+      });
+
+      if (res.statusCode === 200) {
+        logger.info.SERVER_MSG('Created Atlas note_autocomplete index');
+      } else {
+        logger.error.SERVER_MSG(`Failed to create Atlas Autocomplete index: ${JSON.stringify(res.data)}`);
+      }
+    } catch (error) {
+      logger.error.SERVER_MSG(`Error creating Atlas Autocomplete index: ${error}`);
+    }
   } else {
     logger.info.SERVER_MSG('Atlas note_autocomplete index already exists');
   }
 }
 
 const startServer = async () => {
-  await mongoose.connect(process.env.MONGO_URI as string);
+  await mongoose.connect(MONGODB_HOST);
   logger.info.SERVER_MSG('Connected to database');
   await upsertAtlasSearchIndex();
   await upsertAtlasAutocompleteIndex();
