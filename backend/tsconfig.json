@@ -1,0 +1,35 @@
+{
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  },
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "rootDir": "./src",
+    "baseUrl": "./",
+    "plugins": [{ "transform": "typescript-transform-paths" }],
+    "paths": {
+      "@middleware/*": ["./src/middleware/*"],
+      "@controllers/*": ["./src/controllers/*"],
+      "@routes/*": ["./src/routes/*"],
+      "@custom-types/*": ["./src/types/*"],
+      "@models/*": ["./src/models/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@constants/*": ["./src/constants/*"],
+      "@scripts/*": ["./src/scripts/*"]
+    },
+
+    "outDir": "./dist",
+    "removeComments": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "strict": true,
+    "noImplicitAny": false,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "alwaysStrict": true,
+    "skipLibCheck": true
+  }
+}
