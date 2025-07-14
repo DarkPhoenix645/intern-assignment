@@ -2,9 +2,11 @@ const ROUTER_BOOK = {
   USER_AUTH: {
     REGISTER: { method: "POST", path: "/api/auth/register" },
     LOGIN: { method: "POST", path: "/api/auth/login" },
+    GEN_OTP: { method: "POST", path: "/api/auth/gen-otp" },
     LOGIN_OTP: { method: "POST", path: "/api/auth/login-otp" },
     LOGOUT: { method: "POST", path: "/api/auth/logout" },
-    FORGOT_PASSWORD: { method: "POST", path: "/api/auth/forgot-password" },
+    GEN_RESET_OTP: { method: "POST", path: "/api/auth/gen-reset-otp" },
+    RESET_PASSWORD: { method: "POST", path: "/api/auth/reset-password" },
     REFRESH_TOKEN: { method: "POST", path: "/api/auth/refresh" },
   },
   NOTES: {

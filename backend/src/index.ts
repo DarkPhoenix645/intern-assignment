@@ -11,7 +11,7 @@ configDotenv();
 
 import errorHandler from "@middleware/errorHandler";
 import userRouter from "@routes/userRoutes";
-// import adminRouter from '@routes/adminRoutes';
+import logger from "@utils/logger";
 
 const app: Application = express();
 const port = process.env.PORT || 8080;
@@ -31,23 +31,22 @@ app.use(
   })
 );
 
-app.get("/", async (req: Request, res: Response) => {
+app.get("/api", async (req: Request, res: Response) => {
   res.send("Hello World!");
 });
 
 app.use(userRouter);
-// app.use(adminRouter);
 app.use(errorHandler);
 
 const startServer = async () => {
   app.listen(port, async () => {
     try {
       await mongoose.connect(process.env.MONGO_URI as string);
-      console.log("Connected to database");
-      console.log(`Server is running at http://localhost:${port}`);
+      logger.info.SERVER_MSG("Connected to database");
+      logger.info.SERVER_MSG(`Server is running at http://localhost:${port}`);
     } catch (error: any) {
-      console.error(error?.message);
-      console.error("Aborting application...");
+      logger.error.SERVER_ERR(error?.message);
+      logger.error.SERVER_ERR("Aborting application...");
       exit(1);
     }
   });

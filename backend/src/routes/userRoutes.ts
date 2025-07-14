@@ -3,6 +3,15 @@ import routes from "@constants/ROUTER_BOOK";
 import requireAuth from "@middleware/requireAuth";
 // import { loginStudent, sendRegisterRequest } from "@controllers/student";
 import multer from "multer";
+import {
+  generateOTP,
+  generateResetOTP,
+  loginUser,
+  processOTPLogin,
+  refreshTokenHandler,
+  registerUser,
+  resetPassword,
+} from "@controllers/userController";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -20,25 +29,26 @@ still documented in the ROUTER_BOOK.ts file for reference
 */
 
 // Auth routes
-router.post(routes.USER_AUTH.REGISTER.path);
-router.post(routes.USER_AUTH.LOGIN.path);
-router.post(routes.USER_AUTH.LOGIN_OTP.path);
-router.post(routes.USER_AUTH.LOGOUT.path);
-router.post(routes.USER_AUTH.FORGOT_PASSWORD.path);
-router.post(routes.USER_AUTH.REFRESH_TOKEN.path);
+router.post(routes.USER_AUTH.REGISTER.path, registerUser);
+router.post(routes.USER_AUTH.LOGIN.path, loginUser);
+router.post(routes.USER_AUTH.GEN_OTP.path, generateOTP);
+router.post(routes.USER_AUTH.LOGIN_OTP.path, processOTPLogin);
+router.post(routes.USER_AUTH.GEN_RESET_OTP.path, generateResetOTP);
+router.post(routes.USER_AUTH.RESET_PASSWORD.path, resetPassword);
+router.post(routes.USER_AUTH.REFRESH_TOKEN.path, refreshTokenHandler);
 
 // Notes routes
-router.post(routes.NOTES.CREATE.path);
-router.get(routes.NOTES.LIST.path);
-router.get(routes.NOTES.GET_BY_ID.path);
-router.put(routes.NOTES.UPDATE_BY_ID.path);
-router.delete(routes.NOTES.DELETE_BY_ID.path);
+// router.post(routes.NOTES.CREATE.path);
+// router.get(routes.NOTES.LIST.path);
+// router.get(routes.NOTES.GET_BY_ID.path);
+// router.put(routes.NOTES.UPDATE_BY_ID.path);
+// router.delete(routes.NOTES.DELETE_BY_ID.path);
 
 // Bookmarks routes
-router.post(routes.BOOKMARKS.CREATE.path);
-router.get(routes.BOOKMARKS.LIST.path);
-router.get(routes.BOOKMARKS.GET_BY_ID.path);
-router.put(routes.BOOKMARKS.UPDATE_BY_ID.path);
-router.delete(routes.BOOKMARKS.DELETE_BY_ID.path);
+// router.post(routes.BOOKMARKS.CREATE.path);
+// router.get(routes.BOOKMARKS.LIST.path);
+// router.get(routes.BOOKMARKS.GET_BY_ID.path);
+// router.put(routes.BOOKMARKS.UPDATE_BY_ID.path);
+// router.delete(routes.BOOKMARKS.DELETE_BY_ID.path);
 
 export default router;
