@@ -1,10 +1,12 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
+
+export type NoteFileType = 'IMAGE' | 'AUDIO' | 'DOCUMENT';
 
 export interface INoteFile {
   id: string; // unique identifier for referencing in markdown (e.g., file_abc123)
   publicId: string; // Cloudinary public ID
   url: string; // Cloudinary URL
-  type: string; // image, audio, document, etc.
+  type: NoteFileType; // IMAGE, AUDIO, DOCUMENT
   name?: string; // original filename
   size?: number; // file size in bytes
 }
@@ -25,18 +27,22 @@ const noteFileSchema = new mongoose.Schema<INoteFile>(
     id: { type: String, required: true },
     publicId: { type: String, required: true },
     url: { type: String, required: true },
-    type: { type: String, required: true },
+    type: {
+      type: String,
+      enum: ['IMAGE', 'AUDIO', 'DOCUMENT'],
+      required: true,
+    },
     name: { type: String },
     size: { type: Number },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const noteSchema = new mongoose.Schema<INote>(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
       index: true,
     },
@@ -46,11 +52,11 @@ const noteSchema = new mongoose.Schema<INote>(
     favorite: { type: Boolean, default: false },
     files: { type: [noteFileSchema], default: [] },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Text index for search
-noteSchema.index({ title: "text", content: "text", tags: 1 });
+noteSchema.index({ title: 'text', content: 'text' });
 
-const Note = mongoose.model<INote>("Note", noteSchema);
+const Note = mongoose.model<INote>('Note', noteSchema);
 export default Note;

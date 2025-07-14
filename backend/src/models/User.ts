@@ -1,6 +1,6 @@
-import mongoose, { ObjectId } from "mongoose";
-import bcrypt from "bcryptjs";
-import { boolean, number } from "zod";
+import mongoose, { ObjectId } from 'mongoose';
+import bcrypt from 'bcryptjs';
+import { boolean, number } from 'zod';
 
 // Define the document interface
 export interface IUser extends mongoose.Document {
@@ -40,11 +40,11 @@ const userSchema = new mongoose.Schema<IUser>(
     },
     password: { type: String, required: true },
     favorites: {
-      notes: [{ type: mongoose.Schema.Types.ObjectId, ref: "Note" }],
-      bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: "Bookmark" }],
+      notes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Note' }],
+      bookmarks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Bookmark' }],
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 userSchema.statics.login = async function (email, password) {
@@ -55,14 +55,14 @@ userSchema.statics.login = async function (email, password) {
       if (auth) {
         return user;
       }
-      throw new Error("Invalid password");
+      throw new Error('Invalid password');
     } else {
-      throw new Error("User does not exist");
+      throw new Error('User does not exist');
     }
   } catch (error) {
     throw error;
   }
 };
 
-const User = mongoose.model<IUser, UserModel>("User", userSchema);
+const User = mongoose.model<IUser, UserModel>('User', userSchema);
 export default User;

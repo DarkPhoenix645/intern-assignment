@@ -1,8 +1,7 @@
-import express, { Router } from "express";
-import routes from "@constants/ROUTER_BOOK";
-import requireAuth from "@middleware/requireAuth";
-// import { loginStudent, sendRegisterRequest } from "@controllers/student";
-import multer from "multer";
+import express, { Router } from 'express';
+import routes from '@constants/ROUTER_BOOK';
+import { requireAuth } from '@middleware/requireAuth';
+import multer from 'multer';
 import {
   generateOTP,
   generateResetOTP,
@@ -11,7 +10,16 @@ import {
   refreshTokenHandler,
   registerUser,
   resetPassword,
-} from "@controllers/userController";
+} from '@controllers/userController';
+import {
+  autocompleteNoteSearch,
+  createNote,
+  deleteFile,
+  deleteNote,
+  getNote,
+  searchNote,
+  updateNote,
+} from '@controllers/notesController';
 
 // Configure multer for file uploads
 const upload = multer({
@@ -38,11 +46,14 @@ router.post(routes.USER_AUTH.RESET_PASSWORD.path, resetPassword);
 router.post(routes.USER_AUTH.REFRESH_TOKEN.path, refreshTokenHandler);
 
 // Notes routes
-// router.post(routes.NOTES.CREATE.path);
-// router.get(routes.NOTES.LIST.path);
-// router.get(routes.NOTES.GET_BY_ID.path);
-// router.put(routes.NOTES.UPDATE_BY_ID.path);
-// router.delete(routes.NOTES.DELETE_BY_ID.path);
+// Supports upto 10 file uploads per note
+router.post(routes.NOTES.CREATE.path, requireAuth, upload.array('files', 10), createNote);
+router.get(routes.NOTES.LIST.path, requireAuth, getNote);
+router.get(routes.NOTES.AUTOCOMPLETE.path, requireAuth, autocompleteNoteSearch);
+router.get(routes.NOTES.GET_BY_ID.path, requireAuth, getNote);
+router.put(routes.NOTES.UPDATE_BY_ID.path, requireAuth, upload.array('files', 10), updateNote);
+router.delete(routes.NOTES.DELETE_FILE_FROM_NOTE.path, requireAuth, deleteFile);
+router.delete(routes.NOTES.DELETE_BY_ID.path, requireAuth, deleteNote);
 
 // Bookmarks routes
 // router.post(routes.BOOKMARKS.CREATE.path);

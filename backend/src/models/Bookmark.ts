@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 export interface IBookmark extends mongoose.Document {
   user: mongoose.Types.ObjectId;
@@ -17,7 +17,7 @@ const bookmarkSchema = new mongoose.Schema<IBookmark>(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: 'User',
       required: true,
       index: true,
     },
@@ -35,16 +35,16 @@ const bookmarkSchema = new mongoose.Schema<IBookmark>(
     tags: [{ type: String, index: true }],
     favorite: { type: Boolean, default: false },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Text index for search
 bookmarkSchema.index({
-  title: "text",
-  description: "text",
-  url: "text",
+  title: 'text',
+  description: 'text',
+  url: 'text',
   tags: 1,
 });
 
-const Bookmark = mongoose.model<IBookmark>("Bookmark", bookmarkSchema);
+const Bookmark = mongoose.model<IBookmark>('Bookmark', bookmarkSchema);
 export default Bookmark;
