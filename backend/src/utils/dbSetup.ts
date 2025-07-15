@@ -7,19 +7,18 @@ const ATLAS_API_BASE_URL = 'https://cloud.mongodb.com/api/atlas/v2';
 const ATLAS_PROJECT_ID = process.env.MONGODB_ATLAS_PROJECT_ID;
 const ATLAS_CLUSTER_NAME = process.env.MONGODB_ATLAS_CLUSTER;
 const ATLAS_CLUSTER_API_URL = `${ATLAS_API_BASE_URL}/groups/${ATLAS_PROJECT_ID}/clusters/${ATLAS_CLUSTER_NAME}`;
-const ATLAS_SEARCH_INDEX_API_URL = `${ATLAS_CLUSTER_API_URL}/fts/indexes`;
+const ATLAS_SEARCH_INDEX_API_URL = `${ATLAS_CLUSTER_API_URL}/search/indexes`;
 
-const ATLAS_API_PUBLIC_KEY = process.env.MONGODB_ATLAS_PUBLIC_KEY;
-const ATLAS_API_PRIVATE_KEY = process.env.MONGODB_ATLAS_PRIVATE_KEY;
+const ATLAS_SERVICE_ACC_CLIENT_ID = process.env.MONGODB_ATLAS_SERVICE_ACC_CLIENT_ID;
+const ATLAS_SERVICE_ACC_CLIENT_SECRET = process.env.MONGODB_ATLAS_SERVICE_ACC_CLIENT_SECRET;
 
 const NOTE_DB = 'test';
-const NOTE_COLLECTION = 'note';
+const NOTE_COLLECTION = 'notes';
 const NOTE_SEARCH_INDEX_NAME = 'note_search';
 const NOTE_AUTOCOMPLETE_INDEX_NAME = 'note_autocomplete';
 
-const BOOKMARK_COLLECTION = 'bookmark';
+const BOOKMARK_COLLECTION = 'bookmarks';
 const BOOKMARK_SEARCH_INDEX_NAME = 'bookmark_search';
-const BOOKMARK_AUTOCOMPLETE_INDEX_NAME = 'bookmark_autocomplete';
 
 const MONGODB_HOST = process.env.MONGODB_HOST as string;
 
@@ -32,59 +31,57 @@ if (!NOTE_DB) {
   throw new Error('MONGODB_DATABASE environment variable is required, or MONGODB_HOST must include a database name.');
 }
 
-/**
- * Generates the Authorization header for Digest authentication.
- * Note: This is a simplified version and might not cover all edge cases of Digest authentication.
- * For production environments, consider using a more robust Digest authentication library if available,
- * or ensure `axios-digest` is correctly implemented if that's what `request` was using.
- * MongoDB Atlas often uses a realm like 'MongoDB Realm' for digest.
- */
-function getAtlasDigestAuthHeader(method: string, urlPath: string, username: string, password: string) {
-  const nonce = crypto.randomBytes(16).toString('hex');
-  const realm = 'MongoDB Realm'; // Common realm for MongoDB Atlas
-  const qop = 'auth';
-  const nc = '00000001'; // Nonce count, increments with each request, but for simplicity here, it's fixed.
-  const cnonce = crypto.randomBytes(16).toString('hex');
+let atlasAccessToken: string | null = null;
+let atlasAccessTokenExpiry: number | null = null;
 
-  const ha1 = crypto.createHash('md5').update(`${username}:${realm}:${password}`).digest('hex');
-  const ha2 = crypto.createHash('md5').update(`${method}:${urlPath}`).digest('hex');
+async function getAtlasAccessToken(): Promise<string> {
+  const now = Date.now();
+  if (atlasAccessToken && atlasAccessTokenExpiry && now < atlasAccessTokenExpiry) {
+    return atlasAccessToken;
+  }
 
-  const response = crypto.createHash('md5').update(`${ha1}:${nonce}:${nc}:${cnonce}:${qop}:${ha2}`).digest('hex');
+  const clientId = ATLAS_SERVICE_ACC_CLIENT_ID as string;
+  const clientSecret = ATLAS_SERVICE_ACC_CLIENT_SECRET as string;
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 
-  return `Digest username="${username}", realm="${realm}", nonce="${nonce}", uri="${urlPath}", qop="${qop}", nc="${nc}", cnonce="${cnonce}", response="${response}", algorithm="MD5"`;
+  const response = await axios.post('https://cloud.mongodb.com/api/oauth/token', 'grant_type=client_credentials', {
+    headers: {
+      Authorization: `Basic ${credentials}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Accept: 'application/json',
+    },
+  });
+
+  atlasAccessToken = response.data.access_token;
+  // expires_in is in seconds
+  atlasAccessTokenExpiry = now + response.data.expires_in * 1000 - 60000; // refresh 1 min before expiry
+  return atlasAccessToken as string;
 }
 
+const ATLAS_API_ACCEPT_HEADER = 'application/vnd.atlas.2024-05-30+json'; // or the latest version you want
+
 async function axiosRequest(method: string, url: string, data?: any) {
-  const urlPath = url.replace(ATLAS_API_BASE_URL, ''); // Extract the path for Digest Auth URI
+  const accessToken = await getAtlasAccessToken();
   const headers = {
     'Content-Type': 'application/json',
-    Accept: 'application/json', // Using application/json as a general accept for Atlas APIs
-    Authorization: getAtlasDigestAuthHeader(
-      method,
-      urlPath,
-      ATLAS_API_PUBLIC_KEY as string,
-      ATLAS_API_PRIVATE_KEY as string,
-    ),
+    Accept: ATLAS_API_ACCEPT_HEADER,
+    Authorization: `Bearer ${accessToken}`,
   };
 
   try {
     const response = await axios({
-      method: method,
-      url: url,
-      headers: headers,
-      data: data,
+      method,
+      url,
+      headers,
+      data,
     });
     return { statusCode: response.status, data: response.data };
   } catch (error: any) {
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
       return { statusCode: error.response.status, data: error.response.data };
     } else if (error.request) {
-      // The request was made but no response was received
       throw new Error(`No response received from API: ${error.message}`);
     } else {
-      // Something happened in setting up the request that triggered an Error
       throw new Error(`Error setting up API request: ${error.message}`);
     }
   }
@@ -115,11 +112,14 @@ async function upsertAtlasSearchIndex() {
         name: NOTE_SEARCH_INDEX_NAME,
         database: NOTE_DB,
         collectionName: NOTE_COLLECTION,
-        mappings: {
-          dynamic: false,
-          fields: {
-            title: [{ type: 'string' }],
-            content: [{ type: 'string' }],
+        type: 'search',
+        definition: {
+          mappings: {
+            dynamic: false,
+            fields: {
+              title: { type: 'string' },
+              content: { type: 'string' },
+            },
           },
         },
       });
@@ -146,23 +146,23 @@ async function upsertAtlasAutocompleteIndex() {
         name: NOTE_AUTOCOMPLETE_INDEX_NAME,
         database: NOTE_DB,
         collectionName: NOTE_COLLECTION,
-        mappings: {
-          dynamic: false,
-          fields: {
-            title: [
-              {
+        type: 'search',
+        definition: {
+          mappings: {
+            dynamic: false,
+            fields: {
+              title: {
                 type: 'autocomplete',
                 tokenization: 'edgeGram',
                 minGrams: 2,
                 maxGrams: 7,
               },
-            ],
+            },
           },
         },
       });
 
       if (res.statusCode === 201) {
-        // Atlas API returns 201 Created for successful creation
         logger.info.SERVER_MSG('Created Atlas note_autocomplete index');
       } else {
         logger.error.SERVER_MSG(`Failed to create Atlas Autocomplete index: ${JSON.stringify(res.data)}`);
@@ -199,12 +199,15 @@ async function upsertBookmarkSearchIndex() {
         name: BOOKMARK_SEARCH_INDEX_NAME,
         database: NOTE_DB,
         collectionName: BOOKMARK_COLLECTION,
-        mappings: {
-          dynamic: false,
-          fields: {
-            url: [{ type: 'string' }],
-            title: [{ type: 'string' }],
-            description: [{ type: 'string' }],
+        type: 'search',
+        definition: {
+          mappings: {
+            dynamic: false,
+            fields: {
+              url: { type: 'string' },
+              title: { type: 'string' },
+              description: { type: 'string' },
+            },
           },
         },
       });
@@ -221,62 +224,10 @@ async function upsertBookmarkSearchIndex() {
   }
 }
 
-async function upsertBookmarkAutocompleteIndex() {
-  const autocompleteIndex = await findBookmarkAtlasIndexByName(BOOKMARK_AUTOCOMPLETE_INDEX_NAME);
-  if (!autocompleteIndex) {
-    try {
-      const res = await axiosRequest('POST', ATLAS_SEARCH_INDEX_API_URL, {
-        name: BOOKMARK_AUTOCOMPLETE_INDEX_NAME,
-        database: NOTE_DB,
-        collectionName: BOOKMARK_COLLECTION,
-        mappings: {
-          dynamic: false,
-          fields: {
-            url: [
-              {
-                type: 'autocomplete',
-                tokenization: 'edgeGram',
-                minGrams: 2,
-                maxGrams: 7,
-              },
-            ],
-            title: [
-              {
-                type: 'autocomplete',
-                tokenization: 'edgeGram',
-                minGrams: 2,
-                maxGrams: 7,
-              },
-            ],
-            description: [
-              {
-                type: 'autocomplete',
-                tokenization: 'edgeGram',
-                minGrams: 2,
-                maxGrams: 7,
-              },
-            ],
-          },
-        },
-      });
-      if (res.statusCode === 201) {
-        logger.info.SERVER_MSG('Created Atlas bookmark_autocomplete index');
-      } else {
-        logger.error.SERVER_MSG(`Failed to create Atlas bookmark_autocomplete index: ${JSON.stringify(res.data)}`);
-      }
-    } catch (error) {
-      logger.error.SERVER_MSG(`Error creating Atlas bookmark_autocomplete index: ${error}`);
-    }
-  } else {
-    logger.info.SERVER_MSG('Atlas bookmark_autocomplete index already exists');
-  }
-}
-
 export {
   findAtlasIndexByName,
   upsertAtlasSearchIndex,
   upsertAtlasAutocompleteIndex,
   findBookmarkAtlasIndexByName,
   upsertBookmarkSearchIndex,
-  upsertBookmarkAutocompleteIndex,
 };

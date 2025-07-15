@@ -11,12 +11,7 @@ configDotenv();
 import errorHandler from '@middleware/errorHandler';
 import userRouter from '@routes/userRoutes';
 import logger from '@utils/logger';
-import {
-  upsertAtlasAutocompleteIndex,
-  upsertAtlasSearchIndex,
-  upsertBookmarkAutocompleteIndex,
-  upsertBookmarkSearchIndex,
-} from '@utils/dbSetup';
+import { upsertAtlasAutocompleteIndex, upsertAtlasSearchIndex, upsertBookmarkSearchIndex } from '@utils/dbSetup';
 
 const app: Application = express();
 const port = process.env.PORT || 8080;
@@ -49,7 +44,6 @@ const startServer = async () => {
   await upsertAtlasSearchIndex();
   await upsertAtlasAutocompleteIndex();
   await upsertBookmarkSearchIndex();
-  await upsertBookmarkAutocompleteIndex();
   app.listen(port, () => {
     logger.info.SERVER_MSG(`Server is running at http://localhost:${port}`);
   });

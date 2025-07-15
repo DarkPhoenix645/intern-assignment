@@ -33,6 +33,9 @@ const createBookmark = async (req: RequestWithUser, res: Response, next: NextFun
         logger.error.SERVER_ERR(`Failed to fetch OG metadata: ${err}`);
       }
     }
+    // Ensure required fields have values
+    if (!title) title = 'Untitled Bookmark';
+    if (!description) description = 'No description';
     const bookmark = new Bookmark({
       user: req.userObj._id,
       url,
@@ -225,7 +228,7 @@ const autocompleteBookmarkSearch = async (req: RequestWithUser, res: Response, n
     const pipeline: any[] = [
       {
         $search: {
-          index: 'bookmark_autocomplete',
+          index: 'bookmark_search',
           compound: {
             should: [
               {
