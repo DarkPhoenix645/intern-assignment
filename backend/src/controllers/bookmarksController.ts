@@ -4,7 +4,7 @@ import Bookmark from '@models/Bookmark';
 import { NotFoundError, ServerError, UserError } from '@custom-types/errorResponses';
 import successHandler from '@middleware/successHandler';
 import SuccessResponse from '@custom-types/successResponses';
-import ogs from 'ogs';
+import ogs from 'open-graph-scraper';
 import logger from '@utils/logger';
 import {
   BookmarkCreateDTOValidator,
@@ -27,8 +27,8 @@ const createBookmark = async (req: RequestWithUser, res: Response, next: NextFun
     if (!title || !description) {
       try {
         const { result } = await ogs({ url });
-        if (!title && result.ogTitle) title = result.ogTitle;
-        if (!description && result.ogDescription) description = result.ogDescription;
+        if (!title && result.ogTitle) title = result.ogTitle as string;
+        if (!description && result.ogDescription) description = result.ogDescription as string;
       } catch (err) {
         logger.error.SERVER_ERR(`Failed to fetch OG metadata: ${err}`);
       }
@@ -97,8 +97,8 @@ const updateBookmark = async (req: RequestWithUser, res: Response, next: NextFun
     if ((!title || !description) && url) {
       try {
         const { result } = await ogs({ url });
-        if (!title && result.ogTitle) newTitle = result.ogTitle;
-        if (!description && result.ogDescription) newDescription = result.ogDescription;
+        if (!title && result.ogTitle) newTitle = result.ogTitle as string;
+        if (!description && result.ogDescription) newDescription = result.ogDescription as string;
       } catch (err) {
         logger.error.SERVER_ERR(`Failed to fetch OG metadata: ${err}`);
       }
