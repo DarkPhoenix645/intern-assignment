@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const backendUrl = process.env.API_URL || "http://localhost:8000";
+  const backendUrl =
+    process.env.API_URL || "https://intern-assignment-api.onrender.com";
   const res = await fetch(`${backendUrl}/api/auth/me`, {
     method: "GET",
     headers: {

@@ -17,6 +17,294 @@ import {
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 
+function BookmarkDetailModal({
+  bookmarkId,
+  onClose,
+  onBookmarkUpdated,
+  onBookmarkDeleted,
+}: {
+  bookmarkId: string;
+  onClose: () => void;
+  onBookmarkUpdated: (b: any) => void;
+  onBookmarkDeleted: (id: string) => void;
+}) {
+  const [bookmark, setBookmark] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const editForm = useForm({
+    defaultValues: {
+      url: "",
+      title: "",
+      description: "",
+      tags: "",
+      favorite: false,
+    },
+  });
+
+  useEffect(() => {
+    async function fetchBookmark() {
+      setLoading(true);
+      try {
+        const res = await apiFetch(`/api/bookmarks/${bookmarkId}`);
+        if (!res.ok) throw new Error("Failed to fetch bookmark");
+        const data = await res.json();
+        setBookmark(data.bookmark);
+        editForm.reset({
+          url: data.bookmark.url,
+          title: data.bookmark.title,
+          description: data.bookmark.description,
+          tags: data.bookmark.tags?.join(",") || "",
+          favorite: !!data.bookmark.favorite,
+        });
+      } catch (e: any) {
+        toast.error(e.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (bookmarkId) fetchBookmark();
+    // eslint-disable-next-line
+  }, [bookmarkId]);
+
+  async function onSave(data: any) {
+    try {
+      const tagsArr =
+        typeof data.tags === "string"
+          ? data.tags
+              .split(",")
+              .map((t: string) => t.trim())
+              .filter(Boolean)
+          : Array.isArray(data.tags)
+          ? data.tags
+          : [];
+      const res = await apiFetch(`/api/bookmarks/${bookmarkId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: data.url,
+          title: data.title,
+          description: data.description,
+          tags: tagsArr,
+          favorite: !!data.favorite,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update bookmark");
+      toast.success("Bookmark updated");
+      const updated = (await res.json()).bookmark;
+      setBookmark(updated);
+      setEditMode(false);
+      onBookmarkUpdated(updated);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
+  async function onDeleteBookmark() {
+    try {
+      const res = await apiFetch(`/api/bookmarks/${bookmarkId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete bookmark");
+      toast.success("Bookmark deleted");
+      onBookmarkDeleted(bookmarkId);
+      onClose();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
+  async function onToggleFavorite() {
+    try {
+      const res = await apiFetch(`/api/bookmarks/${bookmarkId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ favorite: !bookmark.favorite }),
+      });
+      if (!res.ok) throw new Error("Failed to update favorite");
+      setBookmark((prev: any) => ({ ...prev, favorite: !prev.favorite }));
+      toast.success("Favorite updated");
+      onBookmarkUpdated({ ...bookmark, favorite: !bookmark.favorite });
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
+  if (loading || !bookmark)
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="bg-background rounded-xl shadow-xl w-full max-w-lg p-6 flex flex-col gap-4 relative">
+          Loading...
+        </div>
+      </div>
+    );
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="bg-background rounded-xl shadow-xl w-full max-w-lg p-6 flex flex-col gap-4 relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button className="absolute top-2 right-2 text-2xl" onClick={onClose}>
+          &times;
+        </button>
+        <div className="flex items-center gap-2 mb-2">
+          <h2 className="text-xl font-bold flex-1">
+            {editMode ? "Edit Bookmark" : bookmark.title || bookmark.url}
+          </h2>
+          <button
+            onClick={onToggleFavorite}
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#232323] shadow-md border border-[#2a2a2a] hover:bg-[#333] transition-colors"
+            title={bookmark.favorite ? "Unfavorite" : "Favorite"}
+            style={{ color: "#fff" }}
+          >
+            {bookmark.favorite ? (
+              <Star className="w-5 h-5" />
+            ) : (
+              <StarOff className="w-5 h-5" />
+            )}
+          </button>
+          <button
+            onClick={onDeleteBookmark}
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#232323] shadow-md border border-[#2a2a2a] hover:bg-[#333] transition-colors"
+            title="Delete"
+            style={{ color: "#fff" }}
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+          {!editMode && (
+            <button
+              className="rounded px-3 py-1 border border-muted hover:bg-muted ml-2"
+              onClick={() => setEditMode(true)}
+            >
+              Edit
+            </button>
+          )}
+          {editMode && (
+            <button
+              className="rounded px-3 py-1 border border-muted hover:bg-muted ml-2"
+              onClick={() => setEditMode(false)}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+        {editMode ? (
+          <Form {...editForm}>
+            <form
+              onSubmit={editForm.handleSubmit(onSave)}
+              className="flex flex-col gap-4"
+            >
+              <FormField
+                name="url"
+                control={editForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>URL</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="https://..."
+                        required
+                        type="url"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="title"
+                control={editForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title (optional)</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Title" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="description"
+                control={editForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description (optional)</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Description" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="tags"
+                control={editForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tags (comma separated)</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="tag1,tag2" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormItem>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" {...editForm.register("favorite")} />{" "}
+                  Favorite
+                </label>
+              </FormItem>
+              <button
+                type="submit"
+                className="bg-primary text-primary-foreground rounded px-4 py-2 font-medium hover:bg-primary/90"
+              >
+                Save
+              </button>
+            </form>
+          </Form>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {bookmark.tags?.map((tag: string) => (
+                <span
+                  key={tag}
+                  className="px-2 py-0.5 rounded bg-muted text-xs"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+            <div className="text-xs text-muted-foreground mb-2">
+              <a
+                href={bookmark.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                {bookmark.url}
+              </a>
+            </div>
+            {bookmark.description && (
+              <div className="text-sm mb-2">{bookmark.description}</div>
+            )}
+            {bookmark.meta?.title && (
+              <div className="text-xs text-muted-foreground">
+                Meta: {bookmark.meta.title}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SheenLoader() {
   return (
     <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -47,6 +335,7 @@ export default function BookmarksPage() {
       favorite: false,
     },
   });
+  const [openBookmarkId, setOpenBookmarkId] = useState<string | null>(null);
 
   async function fetchBookmarks(q = searchValue, tags = searchTags) {
     setLoading(true);
@@ -131,11 +420,16 @@ export default function BookmarksPage() {
             bookmarks.map((bm) => (
               <Card
                 key={bm._id}
-                className="relative group hover:ring-2 ring-primary transition-all flex flex-col"
+                className="relative group hover:ring-2 ring-primary transition-all flex flex-col cursor-pointer"
+                onClick={() => setOpenBookmarkId(bm._id)}
+                tabIndex={0}
               >
                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   <button
-                    onClick={() => handleFavorite(bm._id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFavorite(bm._id);
+                    }}
                     className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#232323] shadow-md border border-[#2a2a2a] hover:bg-[#333] transition-colors"
                     title={bm.favorite ? "Unfavorite" : "Favorite"}
                     style={{ color: "#fff" }}
@@ -147,7 +441,10 @@ export default function BookmarksPage() {
                     )}
                   </button>
                   <button
-                    onClick={() => handleDelete(bm._id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(bm._id);
+                    }}
                     className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#232323] shadow-md border border-[#2a2a2a] hover:bg-[#333] transition-colors"
                     title="Delete"
                     style={{ color: "#fff" }}
@@ -155,7 +452,7 @@ export default function BookmarksPage() {
                     <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
-                <Link href={`/bookmarks/${bm._id}`} className="flex-1 block">
+                <div className="flex-1 block">
                   <CardHeader>
                     <CardTitle>{bm.title || bm.url}</CardTitle>
                     <div className="flex flex-wrap gap-2 mt-2">
@@ -189,11 +486,26 @@ export default function BookmarksPage() {
                       </div>
                     )}
                   </CardContent>
-                </Link>
+                </div>
               </Card>
             ))}
         </div>
       </Suspense>
+      {/* Bookmark Detail Modal */}
+      {openBookmarkId && (
+        <BookmarkDetailModal
+          bookmarkId={openBookmarkId}
+          onClose={() => setOpenBookmarkId(null)}
+          onBookmarkUpdated={(updated) =>
+            setBookmarks((prev) =>
+              prev.map((b) => (b._id === updated._id ? updated : b))
+            )
+          }
+          onBookmarkDeleted={(id) =>
+            setBookmarks((prev) => prev.filter((b) => b._id !== id))
+          }
+        />
+      )}
       {/* Create Bookmark Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

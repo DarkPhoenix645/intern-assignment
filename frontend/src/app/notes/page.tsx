@@ -37,6 +37,346 @@ function SheenLoader() {
   );
 }
 
+function NoteDetailModal({
+  noteId,
+  onClose,
+  onNoteUpdated,
+  onNoteDeleted,
+}: {
+  noteId: string;
+  onClose: () => void;
+  onNoteUpdated: (note: any) => void;
+  onNoteDeleted: (id: string) => void;
+}) {
+  const [note, setNote] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deletingFile, setDeletingFile] = useState<string | null>(null);
+  const editForm = useForm({
+    defaultValues: {
+      title: "",
+      content: "",
+      tags: "",
+      favorite: false,
+      files: [],
+    },
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    async function fetchNote() {
+      setLoading(true);
+      try {
+        const res = await apiFetch(`/api/notes/${noteId}`);
+        if (!res.ok) throw new Error("Failed to fetch note");
+        const data = await res.json();
+        setNote(data.note);
+        editForm.reset({
+          title: data.note.title,
+          content: data.note.content,
+          tags: data.note.tags?.join(",") || "",
+          favorite: !!data.note.favorite,
+        });
+      } catch (e: any) {
+        toast.error(e.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (noteId) fetchNote();
+    // eslint-disable-next-line
+  }, [noteId]);
+
+  async function onSave(data: any) {
+    setSaving(true);
+    const formData = new FormData();
+    formData.append("title", data.title);
+    formData.append("content", data.content);
+    // Convert tags to array and favorite to boolean string
+    const tagsArr =
+      typeof data.tags === "string"
+        ? data.tags
+            .split(",")
+            .map((t: string) => t.trim())
+            .filter(Boolean)
+        : Array.isArray(data.tags)
+        ? data.tags
+        : [];
+    tagsArr.forEach((tag: string) => formData.append("tags", tag));
+    formData.append("favorite", data.favorite ? "true" : "false");
+    if (fileInputRef.current && fileInputRef.current.files) {
+      Array.from(fileInputRef.current.files).forEach((file) => {
+        formData.append("files", file);
+      });
+    }
+    try {
+      const res = await apiFetch(`/api/notes/${noteId}`, {
+        method: "PUT",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Failed to update note");
+      toast.success("Note updated");
+      setEditMode(false);
+      const updated = await res.json();
+      setNote(updated);
+      onNoteUpdated(updated);
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function onDeleteFile(fileId: string) {
+    setDeletingFile(fileId);
+    try {
+      const res = await apiFetch(`/api/notes/${noteId}/file`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId }),
+      });
+      if (!res.ok) throw new Error("Failed to delete file");
+      toast.success("File deleted");
+      setNote((prev: any) => ({
+        ...prev,
+        files: prev.files.filter((f: any) => f.id !== fileId),
+      }));
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setDeletingFile(null);
+    }
+  }
+
+  async function onToggleFavorite() {
+    try {
+      const res = await apiFetch(`/api/notes/${noteId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ favorite: !note.favorite }),
+      });
+      if (!res.ok) throw new Error("Failed to update favorite");
+      setNote((prev: any) => ({ ...prev, favorite: !prev.favorite }));
+      toast.success("Favorite updated");
+      onNoteUpdated({ ...note, favorite: !note.favorite });
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
+  async function onDeleteNote() {
+    try {
+      const res = await apiFetch(`/api/notes/${noteId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete note");
+      toast.success("Note deleted");
+      onNoteDeleted(noteId);
+      onClose();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
+  if (loading || !note)
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="bg-background rounded-xl shadow-xl w-full max-w-lg p-6 flex flex-col gap-4 relative">
+          Loading...
+        </div>
+      </div>
+    );
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        className="bg-background rounded-xl shadow-xl w-full max-w-lg p-6 flex flex-col gap-4 relative"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button className="absolute top-2 right-2 text-2xl" onClick={onClose}>
+          &times;
+        </button>
+        <div className="flex items-center gap-2 mb-2">
+          <h2 className="text-xl font-bold flex-1">
+            {editMode ? "Edit Note" : note.title}
+          </h2>
+          <button
+            onClick={onToggleFavorite}
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#232323] shadow-md border border-[#2a2a2a] hover:bg-[#333] transition-colors"
+            title={note.favorite ? "Unfavorite" : "Favorite"}
+            style={{ color: "#fff" }}
+          >
+            {note.favorite ? (
+              <Star className="w-5 h-5" />
+            ) : (
+              <StarOff className="w-5 h-5" />
+            )}
+          </button>
+          <button
+            onClick={onDeleteNote}
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#232323] shadow-md border border-[#2a2a2a] hover:bg-[#333] transition-colors"
+            title="Delete"
+            style={{ color: "#fff" }}
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+          {!editMode && (
+            <button
+              className="rounded px-3 py-1 border border-muted hover:bg-muted ml-2"
+              onClick={() => setEditMode(true)}
+            >
+              Edit
+            </button>
+          )}
+          {editMode && (
+            <button
+              className="rounded px-3 py-1 border border-muted hover:bg-muted ml-2"
+              onClick={() => setEditMode(false)}
+            >
+              Cancel
+            </button>
+          )}
+        </div>
+        {editMode ? (
+          <Form {...editForm}>
+            <form
+              onSubmit={editForm.handleSubmit(onSave)}
+              className="flex flex-col gap-4"
+            >
+              <FormField
+                name="title"
+                control={editForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Title" required />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="content"
+                control={editForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Content</FormLabel>
+                    <FormControl>
+                      <textarea
+                        {...field}
+                        placeholder="Content (Markdown supported)"
+                        rows={6}
+                        className="w-full rounded border bg-muted p-2"
+                        required
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                name="tags"
+                control={editForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tags (comma separated)</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="tag1,tag2" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormItem>
+                <FormLabel>Files</FormLabel>
+                <FormControl>
+                  <Input type="file" multiple ref={fileInputRef} />
+                </FormControl>
+                <FormDescription>
+                  Images, audio, or PDF. Max 10 files.
+                </FormDescription>
+              </FormItem>
+              {note.files && note.files.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {note.files.map((file: any) => (
+                    <div
+                      key={file.id || file.url}
+                      className="flex items-center gap-1 bg-muted rounded px-2 py-1"
+                    >
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline text-xs text-primary"
+                      >
+                        {file.name || file.url}
+                      </a>
+                      <button
+                        type="button"
+                        className="ml-1 text-destructive hover:text-destructive/80"
+                        disabled={deletingFile === file.id}
+                        onClick={() => onDeleteFile(file.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <FormItem>
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" {...editForm.register("favorite")} />{" "}
+                  Favorite
+                </label>
+              </FormItem>
+              <div className="flex gap-2 mt-4">
+                <button
+                  type="submit"
+                  className="bg-primary text-primary-foreground rounded px-4 py-2 font-medium hover:bg-primary/90"
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save"}
+                </button>
+                <button
+                  type="button"
+                  className="rounded px-4 py-2 border border-muted hover:bg-muted"
+                  onClick={() => setEditMode(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </Form>
+        ) : (
+          <>
+            <div className="prose prose-invert max-w-none text-base mb-4">
+              <ReactMarkdown>{note.content}</ReactMarkdown>
+            </div>
+            {note.files && note.files.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {note.files.map((file: any) => (
+                  <a
+                    key={file.id || file.url}
+                    href={file.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-xs text-primary"
+                  >
+                    {file.name || file.url}
+                  </a>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function NotesPage() {
   const { searchValue, searchTags } = useAuth();
   const router = useRouter();
@@ -54,6 +394,7 @@ export default function NotesPage() {
     },
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [openNoteId, setOpenNoteId] = useState<string | null>(null);
 
   async function fetchNotes(q = searchValue, tags = searchTags) {
     setLoading(true);
@@ -168,7 +509,7 @@ export default function NotesPage() {
               <Card
                 key={note._id}
                 className="relative group hover:ring-2 ring-primary transition-all flex flex-col cursor-pointer"
-                onClick={() => router.push(`/notes/${note._id}`)}
+                onClick={() => setOpenNoteId(note._id)}
                 tabIndex={0}
               >
                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
@@ -242,6 +583,21 @@ export default function NotesPage() {
             ))}
         </div>
       </Suspense>
+      {/* Note Detail Modal */}
+      {openNoteId && (
+        <NoteDetailModal
+          noteId={openNoteId}
+          onClose={() => setOpenNoteId(null)}
+          onNoteUpdated={(updated) =>
+            setNotes((prev) =>
+              prev.map((n) => (n._id === updated._id ? updated : n))
+            )
+          }
+          onNoteDeleted={(id) =>
+            setNotes((prev) => prev.filter((n) => n._id !== id))
+          }
+        />
+      )}
       {/* Create Note Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

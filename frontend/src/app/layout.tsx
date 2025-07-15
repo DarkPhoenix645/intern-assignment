@@ -414,7 +414,7 @@ export default function RootLayout({
                 )}
                 {/* Show NotesApp in header after sidebar on desktop only when sidebar is present */}
                 {user && !publicRoutes.includes(pathname) ? (
-                  <span className="font-bold text-xl tracking-tight hidden sm:inline-block ml-4">
+                  <span className="font-bold text-xl tracking-tight hidden sm:inline-block sm:ml-48">
                     NotesApp
                   </span>
                 ) : (

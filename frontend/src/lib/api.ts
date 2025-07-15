@@ -1,4 +1,5 @@
-export const API_ROOT = process.env.API_URL || "http://localhost:8000";
+export const API_ROOT =
+  process.env.API_URL || "https://intern-assignment-api.onrender.com";
 
 export async function apiFetch(path: string, options?: RequestInit) {
   const url = path.startsWith("http") ? path : `${API_ROOT}${path}`;
