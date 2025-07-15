@@ -136,21 +136,23 @@ export default function BookmarksPage() {
                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   <button
                     onClick={() => handleFavorite(bm._id)}
-                    className="p-1 rounded border border-muted bg-background/80 hover:bg-primary/20 transition-colors"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#232323] shadow-md border border-[#2a2a2a] hover:bg-[#333] transition-colors"
                     title={bm.favorite ? "Unfavorite" : "Favorite"}
+                    style={{ color: "#fff" }}
                   >
                     {bm.favorite ? (
-                      <Star className="w-5 h-5 text-yellow-400" />
+                      <Star className="w-5 h-5" />
                     ) : (
-                      <StarOff className="w-5 h-5 text-muted-foreground" />
+                      <StarOff className="w-5 h-5" />
                     )}
                   </button>
                   <button
                     onClick={() => handleDelete(bm._id)}
-                    className="p-1 rounded border border-muted bg-background/80 hover:bg-destructive/20 transition-colors"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#232323] shadow-md border border-[#2a2a2a] hover:bg-[#333] transition-colors"
                     title="Delete"
+                    style={{ color: "#fff" }}
                   >
-                    <Trash2 className="w-5 h-5 text-destructive" />
+                    <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
                 <Link href={`/bookmarks/${bm._id}`} className="flex-1 block">

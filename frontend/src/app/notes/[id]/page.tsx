@@ -149,13 +149,14 @@ export default function NoteDetailPage() {
               <CardTitle>{editMode ? "Edit Note" : note.title}</CardTitle>
               <button
                 onClick={onToggleFavorite}
-                className="p-1 rounded border border-muted bg-background/80 hover:bg-primary/20 transition-colors"
+                className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#232323] shadow-md border border-[#2a2a2a] hover:bg-[#333] transition-colors"
                 title={note.favorite ? "Unfavorite" : "Favorite"}
+                style={{ color: "#fff" }}
               >
                 {note.favorite ? (
-                  <Star className="w-5 h-5 text-yellow-400" />
+                  <Star className="w-5 h-5" />
                 ) : (
-                  <StarOff className="w-5 h-5 text-muted-foreground" />
+                  <StarOff className="w-5 h-5" />
                 )}
               </button>
               {!editMode && (

@@ -1,14 +1,10 @@
 # Nilanjan Mitra's Submission
 
----
-
 ## 🚀 Deployed Application Links
 
 - **Frontend (Vercel):** [Deployed Frontend](https://intern-assignment-lemon.vercel.app/)
 - **Backend (Render):** [Deployed Backend](https://intern-assignment-api.onrender.com)
 - **Postman Workspace:** [Workspace Link](https://app.getpostman.com/join-team?invite_code=36036a73f061cd8070a859fc1abad9c7c48da7072ed13c666e9075beb55ce7b0&target_code=db6c903709a87f1e94a85c5e574ab22c)
-
----
 
 ## Project Overview
 
@@ -23,15 +19,11 @@ A modern, full-stack application for managing personal notes and bookmarks. Feat
 - Favorite Notes and Bookmarks
 - Responsive and clean UI
 
----
-
 ## Tech Stack
 
 - **Backend:** Node.js, Express, MongoDB (Mongoose)
 - **Frontend:** Next.js (React), Tailwind CSS, shadcn/ui, Framer Motion
 - **Other:** JWT Auth, Cloudinary (file uploads), Open Graph Scraper (bookmark metadata)
-
----
 
 ## Setup Instructions
 
@@ -101,8 +93,6 @@ bun run dev
 API_URL=http://localhost:8080
 ```
 
----
-
 ## API Documentation (Backend)
 
 ### Notes API
@@ -136,14 +126,10 @@ API_URL=http://localhost:8080
 - Use JWT cookies for authentication
 - Proper HTTP status codes and error messages
 
----
-
 ## Folder Structure
 
 - `backend/` — Express API, models, controllers, middleware, utils
 - `frontend/` — Next.js app, pages, components, lib
-
----
 
 ## License
 

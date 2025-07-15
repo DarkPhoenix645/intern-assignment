@@ -177,14 +177,15 @@ export default function NotesPage() {
                       e.stopPropagation();
                       handleFavorite(e, note._id, note.favorite);
                     }}
-                    className="p-1 rounded border border-muted bg-background/80 hover:bg-primary/20 transition-colors"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#232323] shadow-md border border-[#2a2a2a] hover:bg-[#333] transition-colors"
                     title={note.favorite ? "Unfavorite" : "Favorite"}
                     tabIndex={0}
+                    style={{ color: "#fff" }}
                   >
                     {note.favorite ? (
-                      <Star className="w-5 h-5 text-yellow-400" />
+                      <Star className="w-5 h-5" />
                     ) : (
-                      <StarOff className="w-5 h-5 text-muted-foreground" />
+                      <StarOff className="w-5 h-5" />
                     )}
                   </button>
                   <button
@@ -193,11 +194,12 @@ export default function NotesPage() {
                       e.preventDefault();
                       handleDelete(note._id);
                     }}
-                    className="p-1 rounded border border-muted bg-background/80 hover:bg-destructive/20 transition-colors"
+                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-[#232323] shadow-md border border-[#2a2a2a] hover:bg-[#333] transition-colors"
                     title="Delete"
                     tabIndex={0}
+                    style={{ color: "#fff" }}
                   >
-                    <Trash2 className="w-5 h-5 text-destructive" />
+                    <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
                 <CardHeader>
