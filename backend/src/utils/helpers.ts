@@ -79,14 +79,14 @@ function setCookies(jwtToken: string, refreshToken: string, res: Response) {
   res.cookie('jwt', jwtToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'none',
     maxAge: JWT_EXPIRES_IN,
   });
 
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'none',
     maxAge: REFRESH_TOKEN_EXPIRES_IN,
   });
 }
