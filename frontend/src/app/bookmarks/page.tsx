@@ -387,6 +387,16 @@ export default function BookmarksPage() {
 
   async function onCreateBookmark(data: any) {
     try {
+      // Ensure tags is always an array of non-empty strings
+      const tagsArr =
+        typeof data.tags === "string"
+          ? data.tags
+              .split(",")
+              .map((t: string) => t.trim())
+              .filter(Boolean)
+          : Array.isArray(data.tags)
+          ? data.tags
+          : [];
       const res = await apiFetch("/api/bookmarks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -394,7 +404,7 @@ export default function BookmarksPage() {
           url: data.url,
           title: data.title,
           description: data.description,
-          tags: data.tags,
+          tags: tagsArr,
           favorite: data.favorite,
         }),
       });
