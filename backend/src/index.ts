@@ -26,7 +26,12 @@ cloudinary.v2.config({
 if (ENV == 'production') {
   logger.info.SERVER_MSG('Runnning in Production Mode');
   logger.info.SERVER_MSG(`SITE_URL: ${process.env.SITE_URL}`);
-  app.use(cors());
+  app.use(
+    cors({
+      origin: process.env.SITE_URL,
+      credentials: true,
+    }),
+  );
 } else {
   logger.info.SERVER_MSG('Runnning in Dev Mode');
   app.use(
