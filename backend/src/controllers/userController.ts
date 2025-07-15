@@ -14,6 +14,7 @@ import SuccessResponse from '@custom-types/successResponses';
 import User from '@models/User';
 import { createJwtToken, createRefreshToken, genSendOTPEmail, setCookies, verifyRefreshToken } from '@utils/helpers';
 import { JwtPayload } from '@custom-types/JWTPayload';
+import { RequestWithUser } from '@middleware/requireAuth';
 
 const registerUser = async (req: Request, res: Response, next: NextFunction) => {
   const validation = UserRegisterDTOValidator.safeParse(req.body);
@@ -281,4 +282,38 @@ const refreshTokenHandler = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export { registerUser, loginUser, generateOTP, processOTPLogin, generateResetOTP, resetPassword, refreshTokenHandler };
+const logoutUser = async (req: Request, res: Response) => {
+  res.clearCookie('jwt', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+  });
+  return res.status(200).json({ message: 'Logged out successfully' });
+};
+
+const getCurrentUser = async (req: RequestWithUser, res: Response) => {
+  if (!req.userObj) {
+    return res.status(401).json({ message: 'Not authenticated' });
+  }
+  const user = req.userObj;
+  const redactedUser = {
+    name: user.name,
+    email: user.email,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+  };
+  return res.status(200).json(redactedUser);
+};
+
+export {
+  registerUser,
+  loginUser,
+  generateOTP,
+  processOTPLogin,
+  generateResetOTP,
+  resetPassword,
+  refreshTokenHandler,
+  logoutUser,
+  getCurrentUser,
+};

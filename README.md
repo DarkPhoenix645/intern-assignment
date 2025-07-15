@@ -1,2 +1,150 @@
-# intern-assignment
-Nilanjan Mitra's Submission for the Take Home Assessment
+# Nilanjan Mitra's Submission
+
+---
+
+## 🚀 Deployed Application Links
+
+- **Frontend (Vercel):** [Add link here]
+- **Backend (Render):** [Add link here]
+- **Postman Workspace:** [Add link here]
+
+---
+
+## Project Overview
+
+A modern, full-stack application for managing personal notes and bookmarks. Features include:
+
+- Save, search, and filter notes with tags and markdown support
+- Save bookmarks with URL, title, and description (auto-fetches metadata)
+- Auto-fetch bookmark title/description from URL using OpenGraph
+- User authentication (JWT, cookies)
+- OTP authentication and forgot password
+- File uploads within notes
+- Favorite Notes and Bookmarks
+- Responsive and clean UI
+
+---
+
+## Tech Stack
+
+- **Backend:** Node.js, Express, MongoDB (Mongoose)
+- **Frontend:** Next.js (React), Tailwind CSS, shadcn/ui, Framer Motion
+- **Other:** JWT Auth, Cloudinary (file uploads), Open Graph Scraper (bookmark metadata)
+
+---
+
+## Setup Instructions
+
+### Prerequisites
+
+- [Bun](https://bun.sh/) (v1.0+)
+- Node.js (for some dev tools)
+- MongoDB Atlas or local MongoDB instance
+- (Optional) Cloudinary account for file uploads
+
+### 1. Clone the Repository
+
+```sh
+git clone <repo-url>
+cd intern-assignment
+```
+
+### 2. Backend Setup
+
+```sh
+cd backend
+bun install
+# Copy and edit .env
+cp .env.example .env
+# Build and start (dev mode)
+bun run dev
+# Or build for production
+bun run build && bun run start
+```
+
+#### Sample .env (backend/.env.example)
+
+```
+PORT=8080
+NODE_ENV=development
+MONGODB_HOST=mongodb+srv://<user>:<password>@cluster.mongodb.net/<dbname>?retryWrites=true&w=majority
+JWT_SECRET=your_jwt_secret
+REFRESH_SECRET=your_refresh_secret
+JWT_EXPIRES_IN=86400
+REFRESH_TOKEN_EXPIRES_IN=1209600
+GMAIL_USER=your_gmail@gmail.com
+GOOGLE_APP_PASSWORD=your_gmail_app_password
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+MONGODB_ATLAS_PROJECT_ID=your_atlas_project_id
+MONGODB_ATLAS_CLUSTER=your_atlas_cluster_name
+MONGODB_ATLAS_SERVICE_ACC_CLIENT_ID=your_atlas_client_id
+MONGODB_ATLAS_SERVICE_ACC_CLIENT_SECRET=your_atlas_client_secret
+```
+
+### 3. Frontend Setup
+
+```sh
+cd ../frontend
+bun install
+# Copy and edit .env
+cp .env.example .env
+# Start dev server
+bun run dev
+```
+
+#### Sample .env (frontend/.env.example)
+
+```
+# API root for backend
+API_URL=http://localhost:8080
+```
+
+---
+
+## API Documentation (Backend)
+
+### Notes API
+
+- `POST   /api/notes` — Create note
+- `GET    /api/notes` — List/search notes (`?q=searchTerm&tags=tag1,tag2`)
+- `GET    /api/notes/:id` — Get note by ID
+- `PUT    /api/notes/:id` — Update note
+- `DELETE /api/notes/:id` — Delete note
+
+### Bookmarks API
+
+- `POST   /api/bookmarks` — Create bookmark
+- `GET    /api/bookmarks` — List/search bookmarks (`?q=searchTerm&tags=tag1,tag2`)
+- `GET    /api/bookmarks/:id` — Get bookmark by ID
+- `PUT    /api/bookmarks/:id` — Update bookmark
+- `DELETE /api/bookmarks/:id` — Delete bookmark
+
+### Auth API
+
+- `POST   /api/auth/register` — Register
+- `POST   /api/auth/login` — Login (email/password)
+- `POST   /api/auth/gen-otp` — Request OTP
+- `POST   /api/auth/otp-login` — Login with OTP
+- `POST   /api/auth/logout` — Logout
+- `GET    /api/auth/me` — Get current user
+
+### General
+
+- All endpoints require authentication except `/api/auth/*` and `/api/health`
+- Use JWT cookies for authentication
+- Proper HTTP status codes and error messages
+
+---
+
+## Folder Structure
+
+- `backend/` — Express API, models, controllers, middleware, utils
+- `frontend/` — Next.js app, pages, components, lib
+
+---
+
+## License
+
+GNU GPLv3

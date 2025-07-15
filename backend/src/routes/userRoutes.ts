@@ -10,6 +10,8 @@ import {
   refreshTokenHandler,
   registerUser,
   resetPassword,
+  logoutUser,
+  getCurrentUser,
 } from '@controllers/userController';
 import {
   autocompleteNoteSearch,
@@ -52,6 +54,8 @@ router.post(routes.USER_AUTH.LOGIN_OTP.path, processOTPLogin);
 router.post(routes.USER_AUTH.GEN_RESET_OTP.path, generateResetOTP);
 router.post(routes.USER_AUTH.RESET_PASSWORD.path, resetPassword);
 router.post(routes.USER_AUTH.REFRESH_TOKEN.path, refreshTokenHandler);
+router.post(routes.USER_AUTH.LOGOUT.path, logoutUser);
+router.get(routes.USER_AUTH.ME.path, requireAuth, getCurrentUser);
 
 // Notes routes
 // Supports upto 10 file uploads per note

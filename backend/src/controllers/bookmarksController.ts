@@ -142,7 +142,6 @@ const searchBookmark = async (req: RequestWithUser, res: Response, next: NextFun
       return next(new UserError('User not authenticated.', '403'));
     }
     const searchQuery = (req.query.q as string) || '';
-    // Parse tags as array of strings
     let tags: string[] = [];
     if (req.query.tags) {
       if (Array.isArray(req.query.tags)) {
@@ -154,13 +153,24 @@ const searchBookmark = async (req: RequestWithUser, res: Response, next: NextFun
           .filter(Boolean);
       }
     }
+    const hasTags = tags.length > 0 && tags[0] !== '';
+
+    if ((!searchQuery || searchQuery.length < 2) && hasTags) {
+      // Only tags filter, no search query
+      const result = await Bookmark.find({ user: req.userObj._id, tags: { $all: tags } });
+      successHandler(new SuccessResponse('Successfully fetched matching bookmarks', '200'), res, { result });
+      return;
+    }
+
     if (!searchQuery || searchQuery.length < 2) {
+      // No search query, no tags
       const result = await Bookmark.find({ user: req.userObj._id });
       successHandler(new SuccessResponse('Successfully fetched matching bookmarks', '200'), res, { result });
       return;
     }
+
     const pipeline: any[] = [];
-    if (tags.length > 0) {
+    if (hasTags) {
       pipeline.push({
         $search: {
           index: 'bookmark_search',

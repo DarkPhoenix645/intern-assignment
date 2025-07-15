@@ -226,17 +226,36 @@ const searchNote = async (req: RequestWithUser, res: Response, next: NextFunctio
       return next(new UserError('User not authenticated.', '403'));
     }
     const searchQuery = (req.query.q as string) || '';
-    const tags = req.query.tags ? (req.query.tags as string).split(',') : [];
+    let tags: string[] = [];
+    if (req.query.tags) {
+      if (Array.isArray(req.query.tags)) {
+        tags = req.query.tags as string[];
+      } else {
+        tags = (req.query.tags as string)
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean);
+      }
+    }
+    const hasTags = tags.length > 0 && tags[0] !== '';
+
+    if ((!searchQuery || searchQuery.length < 2) && hasTags) {
+      // Only tags filter, no search query
+      const result = await Note.find({ user: req.userObj._id, tags: { $all: tags } });
+      successHandler(new SuccessResponse('Successfully fetched matching notes', '200'), res, { result });
+      return;
+    }
 
     if (!searchQuery || searchQuery.length < 2) {
-      const result = await Note.find({ user: req.userObj.id });
+      // No search query, no tags
+      const result = await Note.find({ user: req.userObj._id });
       successHandler(new SuccessResponse('Successfully fetched matching notes', '200'), res, { result });
       return;
     }
 
     const pipeline: any[] = [];
     // Compound search if tags are present
-    if (tags.length > 0 && tags[0] !== '') {
+    if (hasTags) {
       pipeline.push({
         $search: {
           index: 'note_search',
