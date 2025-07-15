@@ -11,6 +11,20 @@ import { BookmarkCreateDTOValidator, BookmarkUpdateDTOValidator } from '@custom-
 // Create Bookmark
 const createBookmark = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
+    // Coerce 'favorite' to boolean if present as string
+    if (req.body && typeof req.body === 'object' && 'favorite' in req.body && typeof req.body.favorite === 'string') {
+      req.body.favorite = req.body.favorite === 'true';
+    }
+    // Ensure 'tags' is always an array
+    if (
+      req.body &&
+      typeof req.body === 'object' &&
+      'tags' in req.body &&
+      req.body.tags &&
+      !Array.isArray(req.body.tags)
+    ) {
+      req.body.tags = [req.body.tags];
+    }
     const validation = BookmarkCreateDTOValidator.safeParse(req.body);
     if (!validation.success) {
       return next(new UserError(validation.error.message));
@@ -72,6 +86,20 @@ const getBookmark = async (req: RequestWithUser, res: Response, next: NextFuncti
 // Update bookmark
 const updateBookmark = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
+    // Coerce 'favorite' to boolean if present as string
+    if (req.body && typeof req.body === 'object' && 'favorite' in req.body && typeof req.body.favorite === 'string') {
+      req.body.favorite = req.body.favorite === 'true';
+    }
+    // Ensure 'tags' is always an array
+    if (
+      req.body &&
+      typeof req.body === 'object' &&
+      'tags' in req.body &&
+      req.body.tags &&
+      !Array.isArray(req.body.tags)
+    ) {
+      req.body.tags = [req.body.tags];
+    }
     const validation = BookmarkUpdateDTOValidator.safeParse(req.body);
     if (!validation.success) {
       return next(new UserError(validation.error.message));

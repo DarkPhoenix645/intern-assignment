@@ -14,6 +14,20 @@ import {
 
 const createNote = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
+    // Coerce 'favorite' to boolean if present as string
+    if (req.body && typeof req.body === 'object' && 'favorite' in req.body && typeof req.body.favorite === 'string') {
+      req.body.favorite = req.body.favorite === 'true';
+    }
+    // Ensure 'tags' is always an array
+    if (
+      req.body &&
+      typeof req.body === 'object' &&
+      'tags' in req.body &&
+      req.body.tags &&
+      !Array.isArray(req.body.tags)
+    ) {
+      req.body.tags = [req.body.tags];
+    }
     const validation = NoteCreateDTOValidator.safeParse(req.body);
     if (!validation.success) {
       return next(new UserError(validation.error.message));
@@ -102,6 +116,20 @@ const getNote = async (req: RequestWithUser, res: Response, next: NextFunction) 
 
 const updateNote = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
+    // Coerce 'favorite' to boolean if present as string
+    if (req.body && typeof req.body === 'object' && 'favorite' in req.body && typeof req.body.favorite === 'string') {
+      req.body.favorite = req.body.favorite === 'true';
+    }
+    // Ensure 'tags' is always an array
+    if (
+      req.body &&
+      typeof req.body === 'object' &&
+      'tags' in req.body &&
+      req.body.tags &&
+      !Array.isArray(req.body.tags)
+    ) {
+      req.body.tags = [req.body.tags];
+    }
     const validation = NoteUpdateDTOValidator.safeParse(req.body);
     if (!validation.success) {
       return next(new UserError(validation.error.message));
