@@ -57,22 +57,27 @@ bun run build && bun run start
 #### Sample .env (backend/.env.example)
 
 ```
-PORT=8080
 NODE_ENV=development
-MONGODB_HOST=mongodb+srv://<user>:<password>@cluster.mongodb.net/<dbname>?retryWrites=true&w=majority
+PORT=8000
+GMAIL_USER="your_email@gmail.com"
+GOOGLE_APP_PASSWORD="your_google_app_password"
 JWT_SECRET=your_jwt_secret
-REFRESH_SECRET=your_refresh_secret
-JWT_EXPIRES_IN=86400
-REFRESH_TOKEN_EXPIRES_IN=1209600
-GMAIL_USER=your_gmail@gmail.com
-GOOGLE_APP_PASSWORD=your_gmail_app_password
+SITE_URL=https://your-site-url.com
+
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-MONGODB_ATLAS_PROJECT_ID=your_atlas_project_id
-MONGODB_ATLAS_CLUSTER=your_atlas_cluster_name
-MONGODB_ATLAS_SERVICE_ACC_CLIENT_ID=your_atlas_client_id
-MONGODB_ATLAS_SERVICE_ACC_CLIENT_SECRET=your_atlas_client_secret
+
+MONGODB_USERNAME=your_mongodb_username
+MONGODB_PASSWORD=your_mongodb_password
+MONGODB_HOST=your_mongodb_connection_string
+
+MONGODB_ATLAS_PROJECT_ID=your_mongodb_atlas_project_id
+MONGODB_ATLAS_CLUSTER=your_mongodb_atlas_cluster
+MONGODB_ATLAS_PUBLIC_KEY=your_mongodb_atlas_public_key
+MONGODB_ATLAS_PRIAVTE_KEY=your_mongodb_atlas_private_key
+MONGODB_ATLAS_SERVICE_ACC_CLIENT_ID=your_mongodb_atlas_service_account_client_id
+MONGODB_ATLAS_SERVICE_ACC_CLIENT_SECRET=your_mongodb_atlas_service_account_client_secret
 ```
 
 ### 3. Frontend Setup
@@ -90,7 +95,7 @@ bun run dev
 
 ```
 # API root for backend
-API_URL=http://localhost:8080
+API_URL=https://your-backend-url.com
 ```
 
 ## API Documentation (Backend)
