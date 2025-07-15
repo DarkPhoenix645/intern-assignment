@@ -4,9 +4,9 @@
 
 ## 🚀 Deployed Application Links
 
-- **Frontend (Vercel):** [Add link here]
-- **Backend (Render):** [Add link here]
-- **Postman Workspace:** [Add link here]
+- **Frontend (Vercel):** [Deployed Frontend](https://intern-assignment-lemon.vercel.app/)
+- **Backend (Render):** [Deployed Backend](https://intern-assignment-api.onrender.com)
+- **Postman Workspace:** [Workspace Link](https://app.getpostman.com/join-team?invite_code=36036a73f061cd8070a859fc1abad9c7c48da7072ed13c666e9075beb55ce7b0&target_code=db6c903709a87f1e94a85c5e574ab22c)
 
 ---
 

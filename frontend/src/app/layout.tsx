@@ -369,6 +369,10 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <title>NotesApp</title>
+        <link rel="icon" href="/favicon.ico" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
@@ -408,20 +412,16 @@ export default function RootLayout({
                     <Menu className="w-6 h-6" />
                   </button>
                 )}
-                {/* Always show NotesApp on desktop */}
-                <Link
-                  href="/"
-                  className="font-bold text-xl tracking-tight hidden sm:block"
-                >
-                  NotesApp
-                </Link>
-                {/* Always show NotesApp on mobile */}
-                <Link
-                  href="/"
-                  className="font-bold text-xl tracking-tight sm:hidden"
-                >
-                  NotesApp
-                </Link>
+                {/* Show NotesApp in header after sidebar on desktop only when sidebar is present */}
+                {user && !publicRoutes.includes(pathname) ? (
+                  <span className="font-bold text-xl tracking-tight hidden sm:inline-block ml-4">
+                    NotesApp
+                  </span>
+                ) : (
+                  <Link href="/" className="font-bold text-xl tracking-tight">
+                    NotesApp
+                  </Link>
+                )}
               </div>
               <div className="flex gap-2 items-center">
                 <TopBarSearch />

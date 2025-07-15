@@ -4,8 +4,18 @@ import { apiFetch } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Trash2, Star, StarOff } from "lucide-react";
+import { Trash2, Star, StarOff, Plus } from "lucide-react";
 import { useAuth } from "../layout";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
 
 function SheenLoader() {
   return (
@@ -27,6 +37,16 @@ export default function BookmarksPage() {
   const [hasHydrated, setHasHydrated] = useState(false);
   const [bookmarks, setBookmarks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const createForm = useForm({
+    defaultValues: {
+      url: "",
+      title: "",
+      description: "",
+      tags: "",
+      favorite: false,
+    },
+  });
 
   async function fetchBookmarks(q = searchValue, tags = searchTags) {
     setLoading(true);
@@ -76,6 +96,29 @@ export default function BookmarksPage() {
     // Optionally call backend to persist
   }
 
+  async function onCreateBookmark(data: any) {
+    try {
+      const res = await apiFetch("/api/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: data.url,
+          title: data.title,
+          description: data.description,
+          tags: data.tags,
+          favorite: data.favorite,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to create bookmark");
+      toast.success("Bookmark created");
+      setShowCreate(false);
+      createForm.reset();
+      fetchBookmarks();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground p-4 flex flex-col items-center">
       <Suspense fallback={<SheenLoader />}>
@@ -93,7 +136,7 @@ export default function BookmarksPage() {
                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                   <button
                     onClick={() => handleFavorite(bm._id)}
-                    className="p-1 rounded hover:bg-primary/20"
+                    className="p-1 rounded border border-muted bg-background/80 hover:bg-primary/20 transition-colors"
                     title={bm.favorite ? "Unfavorite" : "Favorite"}
                   >
                     {bm.favorite ? (
@@ -104,7 +147,7 @@ export default function BookmarksPage() {
                   </button>
                   <button
                     onClick={() => handleDelete(bm._id)}
-                    className="p-1 rounded hover:bg-destructive/20"
+                    className="p-1 rounded border border-muted bg-background/80 hover:bg-destructive/20 transition-colors"
                     title="Delete"
                   >
                     <Trash2 className="w-5 h-5 text-destructive" />
@@ -149,6 +192,107 @@ export default function BookmarksPage() {
             ))}
         </div>
       </Suspense>
+      {/* Create Bookmark Modal */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-background rounded-xl shadow-xl w-full max-w-lg p-6 flex flex-col gap-4 relative">
+            <button
+              className="absolute top-2 right-2 text-2xl"
+              onClick={() => setShowCreate(false)}
+            >
+              &times;
+            </button>
+            <h2 className="text-xl font-bold mb-2">Create Bookmark</h2>
+            <Form {...createForm}>
+              <form
+                onSubmit={createForm.handleSubmit(onCreateBookmark)}
+                className="flex flex-col gap-4"
+              >
+                <FormField
+                  name="url"
+                  control={createForm.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>URL</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="https://..."
+                          required
+                          type="url"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="title"
+                  control={createForm.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title (optional)</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Title" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="description"
+                  control={createForm.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description (optional)</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Description" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="tags"
+                  control={createForm.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tags (comma separated)</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="tag1,tag2" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormItem>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      {...createForm.register("favorite")}
+                    />{" "}
+                    Favorite
+                  </label>
+                </FormItem>
+                <button
+                  type="submit"
+                  className="bg-primary text-primary-foreground rounded px-4 py-2 font-medium hover:bg-primary/90"
+                >
+                  Create
+                </button>
+              </form>
+            </Form>
+          </div>
+        </div>
+      )}
+      {/* Floating Plus Button */}
+      <button
+        className="fixed bottom-8 right-8 z-50 bg-primary text-primary-foreground rounded-full shadow-lg p-4 hover:bg-primary/90 transition-all flex items-center justify-center"
+        title="Create New Bookmark"
+        onClick={() => setShowCreate(true)}
+      >
+        <Plus className="w-7 h-7" />
+      </button>
     </div>
   );
 }
