@@ -47,22 +47,5 @@ const userSchema = new mongoose.Schema<IUser>(
   { timestamps: true },
 );
 
-userSchema.statics.login = async function (email, password) {
-  const user = await this.findOne({ email });
-  try {
-    if (user) {
-      const auth = await bcrypt.compare(password, user.password);
-      if (auth) {
-        return user;
-      }
-      throw new Error('Invalid password');
-    } else {
-      throw new Error('User does not exist');
-    }
-  } catch (error) {
-    throw error;
-  }
-};
-
 const User = mongoose.model<IUser, UserModel>('User', userSchema);
 export default User;

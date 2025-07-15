@@ -55,8 +55,5 @@ const noteSchema = new mongoose.Schema<INote>(
   { timestamps: true },
 );
 
-// Text index for search
-noteSchema.index({ title: 'text', content: 'text' });
-
 const Note = mongoose.model<INote>('Note', noteSchema);
 export default Note;

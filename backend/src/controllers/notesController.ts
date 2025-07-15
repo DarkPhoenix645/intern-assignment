@@ -229,7 +229,7 @@ const searchNote = async (req: RequestWithUser, res: Response, next: NextFunctio
     const tags = req.query.tags ? (req.query.tags as string).split(',') : [];
 
     if (!searchQuery || searchQuery.length < 2) {
-      const result = await Note.find({ _id: req.userObj.id });
+      const result = await Note.find({ user: req.userObj.id });
       successHandler(new SuccessResponse('Successfully fetched matching notes', '200'), res, { result });
       return;
     }
@@ -240,25 +240,14 @@ const searchNote = async (req: RequestWithUser, res: Response, next: NextFunctio
       pipeline.push({
         $search: {
           index: 'note_search',
-          compound: {
-            must: [
-              {
-                text: {
-                  query: searchQuery,
-                  path: ['title', 'content'],
-                  fuzzy: {},
-                },
-              },
-              {
-                text: {
-                  query: tags,
-                  path: 'tags',
-                },
-              },
-            ],
+          text: {
+            query: searchQuery,
+            path: ['title', 'content'],
+            fuzzy: {},
           },
         },
       });
+      pipeline.push({ $match: { user: req.userObj._id, tags: { $all: tags } } });
     } else {
       pipeline.push({
         $search: {
@@ -270,8 +259,8 @@ const searchNote = async (req: RequestWithUser, res: Response, next: NextFunctio
           },
         },
       });
+      pipeline.push({ $match: { user: req.userObj._id } });
     }
-    pipeline.push({ $match: { user: req.userObj._id } });
     pipeline.push({
       $project: {
         _id: 1,

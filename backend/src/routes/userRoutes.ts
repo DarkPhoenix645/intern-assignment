@@ -64,9 +64,11 @@ router.delete(routes.NOTES.DELETE_FILE_FROM_NOTE.path, requireAuth, deleteFile);
 router.delete(routes.NOTES.DELETE_BY_ID.path, requireAuth, deleteNote);
 
 // Bookmarks routes
+// Bookmark autocomplete disabled in the final product as there is a limit of 3 Atlas Search indexes per M0 cluster
+// These have been used up by the notes search, notes autocomplete and the bookmarks search indexes
 router.post(routes.BOOKMARKS.CREATE.path, requireAuth, createBookmark);
 router.get(routes.BOOKMARKS.LIST.path, requireAuth, searchBookmark);
-router.get(routes.BOOKMARKS.AUTOCOMPLETE.path, requireAuth, autocompleteBookmarkSearch);
+// router.get(routes.BOOKMARKS.AUTOCOMPLETE.path, requireAuth, autocompleteBookmarkSearch);
 router.get(routes.BOOKMARKS.GET_BY_ID.path, requireAuth, getBookmark);
 router.put(routes.BOOKMARKS.UPDATE_BY_ID.path, requireAuth, updateBookmark);
 router.delete(routes.BOOKMARKS.DELETE_BY_ID.path, requireAuth, deleteBookmark);

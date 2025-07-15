@@ -4,11 +4,11 @@ import bcrypt from 'bcryptjs';
 import User, { IUser } from '../models/User';
 import Note, { INote } from '../models/Note';
 import Bookmark, { IBookmark } from '../models/Bookmark';
-
-const MONGODB_URI = process.env.MONGODB_HOST || 'mongodb://localhost:27017/test';
+import { configDotenv } from 'dotenv';
+configDotenv();
 
 async function main() {
-  await mongoose.connect(MONGODB_URI);
+  await mongoose.connect(process.env.MONGODB_HOST as string);
   console.log('Connected to MongoDB');
 
   // Clear existing data

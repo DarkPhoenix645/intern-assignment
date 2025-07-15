@@ -6,11 +6,7 @@ import successHandler from '@middleware/successHandler';
 import SuccessResponse from '@custom-types/successResponses';
 import ogs from 'open-graph-scraper';
 import logger from '@utils/logger';
-import {
-  BookmarkCreateDTOValidator,
-  BookmarkUpdateDTOValidator,
-  BookmarkDeleteDTOValidator,
-} from '@custom-types/DTOs/bookmarkDTOValidator';
+import { BookmarkCreateDTOValidator, BookmarkUpdateDTOValidator } from '@custom-types/DTOs/bookmarkDTOValidator';
 
 // Create Bookmark
 const createBookmark = async (req: RequestWithUser, res: Response, next: NextFunction) => {
@@ -83,7 +79,9 @@ const updateBookmark = async (req: RequestWithUser, res: Response, next: NextFun
     if (!req.userObj || !req.userObj._id) {
       return next(new UserError('User not authenticated.', '403'));
     }
-    const { bookmarkId, url, title, description, tags, favorite } = validation.data;
+    const { url, title, description, tags, favorite } = validation.data;
+
+    const bookmarkId = (req.params as any).id;
     if (!bookmarkId) {
       return next(new UserError('Bookmark ID is a required field'));
     }
@@ -119,14 +117,10 @@ const updateBookmark = async (req: RequestWithUser, res: Response, next: NextFun
 // Delete bookmark
 const deleteBookmark = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
-    const validation = BookmarkDeleteDTOValidator.safeParse(req.body);
-    if (!validation.success) {
-      return next(new UserError(validation.error.message));
-    }
     if (!req.userObj || !req.userObj._id) {
       return next(new UserError('User not authenticated.', '403'));
     }
-    const { bookmarkId } = validation.data;
+    const bookmarkId = (req.params as any).id;
     if (!bookmarkId) {
       return next(new UserError('Bookmark ID is a required field'));
     }
@@ -148,36 +142,36 @@ const searchBookmark = async (req: RequestWithUser, res: Response, next: NextFun
       return next(new UserError('User not authenticated.', '403'));
     }
     const searchQuery = (req.query.q as string) || '';
-    const tags = req.query.tags ? (req.query.tags as string).split(',') : [];
+    // Parse tags as array of strings
+    let tags: string[] = [];
+    if (req.query.tags) {
+      if (Array.isArray(req.query.tags)) {
+        tags = req.query.tags as string[];
+      } else {
+        tags = (req.query.tags as string)
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean);
+      }
+    }
     if (!searchQuery || searchQuery.length < 2) {
       const result = await Bookmark.find({ user: req.userObj._id });
       successHandler(new SuccessResponse('Successfully fetched matching bookmarks', '200'), res, { result });
       return;
     }
     const pipeline: any[] = [];
-    if (tags.length > 0 && tags[0] !== '') {
+    if (tags.length > 0) {
       pipeline.push({
         $search: {
           index: 'bookmark_search',
-          compound: {
-            must: [
-              {
-                text: {
-                  query: searchQuery,
-                  path: ['url', 'title', 'description'],
-                  fuzzy: {},
-                },
-              },
-              {
-                text: {
-                  query: tags,
-                  path: 'tags',
-                },
-              },
-            ],
+          text: {
+            query: searchQuery,
+            path: ['url', 'title', 'description'],
+            fuzzy: {},
           },
         },
       });
+      pipeline.push({ $match: { user: req.userObj._id, tags: { $all: tags } } });
     } else {
       pipeline.push({
         $search: {
@@ -189,8 +183,8 @@ const searchBookmark = async (req: RequestWithUser, res: Response, next: NextFun
           },
         },
       });
+      pipeline.push({ $match: { user: req.userObj._id } });
     }
-    pipeline.push({ $match: { user: req.userObj._id } });
     pipeline.push({
       $project: {
         _id: 1,
@@ -216,6 +210,7 @@ const searchBookmark = async (req: RequestWithUser, res: Response, next: NextFun
 };
 
 // Autocomplete bookmarks using Atlas Search
+// Not functional in the final code as Atlas has a limit of 3 search indexes per M0 cluster
 const autocompleteBookmarkSearch = async (req: RequestWithUser, res: Response, next: NextFunction) => {
   try {
     if (!req.userObj || !req.userObj._id) {

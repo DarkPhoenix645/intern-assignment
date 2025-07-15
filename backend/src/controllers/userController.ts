@@ -52,7 +52,7 @@ const registerUser = async (req: Request, res: Response, next: NextFunction) => 
     logger.info.USER_REQ(`User registered successfully: ${name} (${email})`);
     successHandler(new SuccessResponse('User registered successfully', '201'), res, { redactedUser });
   } catch (err) {
-    logger.error.SERVER_ERR('Error registering user', { error: err });
+    logger.error.SERVER_ERR(`Error registering user: ${err}`);
     next(new ServerError('Failed to register user.'));
   }
 };

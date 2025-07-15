@@ -38,13 +38,5 @@ const bookmarkSchema = new mongoose.Schema<IBookmark>(
   { timestamps: true },
 );
 
-// Text index for search
-bookmarkSchema.index({
-  title: 'text',
-  description: 'text',
-  url: 'text',
-  tags: 1,
-});
-
 const Bookmark = mongoose.model<IBookmark>('Bookmark', bookmarkSchema);
 export default Bookmark;
