@@ -20,6 +20,14 @@ import {
   searchNote,
   updateNote,
 } from '@controllers/notesController';
+import {
+  createBookmark,
+  getBookmark,
+  updateBookmark,
+  deleteBookmark,
+  searchBookmark,
+  autocompleteBookmarkSearch,
+} from '@controllers/bookmarksController';
 
 // Configure multer for file uploads
 const upload = multer({
@@ -48,7 +56,7 @@ router.post(routes.USER_AUTH.REFRESH_TOKEN.path, refreshTokenHandler);
 // Notes routes
 // Supports upto 10 file uploads per note
 router.post(routes.NOTES.CREATE.path, requireAuth, upload.array('files', 10), createNote);
-router.get(routes.NOTES.LIST.path, requireAuth, getNote);
+router.get(routes.NOTES.LIST.path, requireAuth, searchNote);
 router.get(routes.NOTES.AUTOCOMPLETE.path, requireAuth, autocompleteNoteSearch);
 router.get(routes.NOTES.GET_BY_ID.path, requireAuth, getNote);
 router.put(routes.NOTES.UPDATE_BY_ID.path, requireAuth, upload.array('files', 10), updateNote);
@@ -56,10 +64,11 @@ router.delete(routes.NOTES.DELETE_FILE_FROM_NOTE.path, requireAuth, deleteFile);
 router.delete(routes.NOTES.DELETE_BY_ID.path, requireAuth, deleteNote);
 
 // Bookmarks routes
-// router.post(routes.BOOKMARKS.CREATE.path);
-// router.get(routes.BOOKMARKS.LIST.path);
-// router.get(routes.BOOKMARKS.GET_BY_ID.path);
-// router.put(routes.BOOKMARKS.UPDATE_BY_ID.path);
-// router.delete(routes.BOOKMARKS.DELETE_BY_ID.path);
+router.post(routes.BOOKMARKS.CREATE.path, requireAuth, createBookmark);
+router.get(routes.BOOKMARKS.LIST.path, requireAuth, searchBookmark);
+router.get(routes.BOOKMARKS.AUTOCOMPLETE.path, requireAuth, autocompleteBookmarkSearch);
+router.get(routes.BOOKMARKS.GET_BY_ID.path, requireAuth, getBookmark);
+router.put(routes.BOOKMARKS.UPDATE_BY_ID.path, requireAuth, updateBookmark);
+router.delete(routes.BOOKMARKS.DELETE_BY_ID.path, requireAuth, deleteBookmark);
 
 export default router;
