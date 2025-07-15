@@ -1,7 +1,6 @@
 import { createLogger, format, transports } from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import fs from 'fs';
-import { LoggingWinston } from '@google-cloud/logging-winston';
 import { severityMapping } from '../../types/logger';
 
 const { combine, timestamp, printf, errors } = format;
@@ -16,9 +15,6 @@ const logFormat = printf(({ level, message, timestamp, stack, eventType }) => {
   const eventPrefix = eventType ? `[${eventType}] ` : '';
   return `[${timestamp}] [${severity}] ${eventPrefix}${stack || message}`;
 });
-
-// Google Cloud Logging transport
-const loggingWinston = new LoggingWinston();
 
 // File rotation setup (Stores logs locally)
 const errorsFileRotateTransport = new DailyRotateFile({
@@ -40,7 +36,7 @@ const productionLogger = () => {
   return createLogger({
     level: 'info',
     format: combine(timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), errors({ stack: true }), logFormat),
-    transports: [new transports.Console(), loggingWinston, errorsFileRotateTransport, combinedFileRotateTransport],
+    transports: [new transports.Console(), errorsFileRotateTransport, combinedFileRotateTransport],
     defaultMeta: { service: 'twaran-backend' },
   });
 };
