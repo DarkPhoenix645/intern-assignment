@@ -15,6 +15,7 @@ import { upsertAtlasAutocompleteIndex, upsertAtlasSearchIndex, upsertBookmarkSea
 
 const app: Application = express();
 const port = process.env.PORT || 8080;
+const ENV = process.env.NODE_ENV;
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -22,14 +23,26 @@ cloudinary.v2.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+if (ENV === 'production') {
+  app.use(
+    cors({
+      origin: process.env.SITE_URL,
+      credentials: true,
+      optionsSuccessStatus: 200,
+      maxAge: 86400,
+    }),
+  );
+} else {
+  app.use(
+    cors({
+      origin: true,
+      credentials: true,
+    }),
+  );
+}
+
 app.use(cookieParser());
 app.use(express.json());
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  }),
-);
 
 app.get('/api', async (req: Request, res: Response) => {
   res.send('Hello World!');
